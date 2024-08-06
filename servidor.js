@@ -58,6 +58,8 @@ sw.get('/listenderecos', function (req, res, next) {
         }
     });
 });
+
+
 sw.get('/listtestes', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
@@ -86,6 +88,8 @@ sw.get('/listtestes', function (req, res, next) {
         }
     });
 });
+
+
 sw.get('/listpatentes', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
@@ -102,6 +106,36 @@ sw.get('/listpatentes', function (req, res, next) {
                 done(); // closing the connection;
                 if (err) {
                     console.log('retornou 400 no listpatente');
+                    console.log(err);
+
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    //console.log('retornou 201 no /listendereco');
+                    res.status(201).send(result.rows);
+                }
+            });
+        }
+    });
+});
+
+
+sw.get('/listjogadores', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = 'select j.nickname, p.nome, j.senha, j.quantpontos, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy hh24:mm:ss\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy hh24:mm:ss\') as data_ultimo_login, j.situacao from tb_jogador j, tb_patente p, tb_jogador_conquista_patente pj where j.nickname = pj.nickname and p.codigo = pj.codpatente';
+
+            client.query(q, function (err, result) {
+                done(); // closing the connection;
+                if (err) {
+                    console.log('retornou 400 no listjogadores');
                     console.log(err);
 
                     res.status(400).send('{' + err + '}');
