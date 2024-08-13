@@ -130,19 +130,29 @@ sw.get('/listjogadores', function (req, res, next) {
             res.status(400).send('{' + err + '}');
         } else {
 
-            var q = 'select j.nickname, p.nome, j.senha, j.quantpontos, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy hh24:mm:ss\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy hh24:mm:ss\') as data_ultimo_login, j.situacao from tb_jogador j, tb_patente p, tb_jogador_conquista_patente pj where j.nickname = pj.nickname and p.codigo = pj.codpatente';
+            var q = 'select j.nickname, j.senha, 0 as patentes, j.quantpontos, e.complemento as Complemento, e.cep as CEP, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy hh24:mm:ss\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy hh24:mm:ss\') as data_ultimo_login, j.situacao from tb_jogador j, tb_endereco e where e.nicknamejogador = j.nickname order by nickname asc;';
 
-            client.query(q, function (err, result) {
-                done(); // closing the connection;
+            client.query(q, async function (err, result) {
+
                 if (err) {
                     console.log('retornou 400 no listjogadores');
                     console.log(err);
 
                     res.status(400).send('{' + err + '}');
                 } else {
+                    for (var i = 0; i < result.rows.length; i++) {
+                        try {
+                            pj = await client.query('select p.codigo, p.nome from tb_patente p, tb_jogador_conquista_patente jp where jp.codpatente=p.codigo and jp.nickname = $1', [result.rows[i].nickname])
+                            result.rows[i].patentes = pj.rows;
+                        } catch (err) {
+                            res.status(400).send('{' + err + '}');
+                        }
 
+                    }
                     //console.log('retornou 201 no /listendereco');
                     res.status(201).send(result.rows);
+                    done(); // closing the connection;
+
                 }
             });
         }
