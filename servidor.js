@@ -160,9 +160,9 @@ sw.get('/listjogadores', function (req, res, next) {
 });
 
 
-sw.post('insertpatente', function ( req, res, next) {
+sw.post('insertpatentes', function (req, res, next) {
 
-    postgres.connect(function(err,client, done){
+    postgres.connect(function (err, client, done) {
         if (err) {
 
             console.log("Nao conseguiu acessar o  BD " + err);
@@ -170,9 +170,25 @@ sw.post('insertpatente', function ( req, res, next) {
         } else {
 
             var q1 = {
-                text: "insert into tb_patente(nome, quant_min_pontos, datacriacao, cor, logotipo) values ($1, $2, now(), $3, $4) returning codigo, nome, quant_min_;"
+                text: "insert into tb_patente(nome, quant_min_pontos, datacriacao, cor, logotipo) values ($1, $2, now(), $3, $4) returning codigo, nome, quant_min_pontos, datacriacao, cor, logotipo;",
 
+                values: [req.body.nome,
+                req.body.quant_min_pontos,
+                req.body.cor, req.body.logotipo]
             }
+            console.log(q1)
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    console.log('retornou 201 no insertpatente');
+                    res.status.send({});
+                }
+
+            })
+
         }
     })
 });
