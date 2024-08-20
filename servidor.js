@@ -188,6 +188,7 @@ sw.post('/insertpatentes', function (req, res, next) {
                         "codigo": result1.rows[0].codigo, "nome": result1.rows[0].nome,
                         "quant_min_pontos": result1.rows[0].quant_min_pontos,
                          "cor": result1.rows[0].cor,
+                         "datacriacao": result1.rows[0].datacriacao,
                           "logotipo": result1.rows[0].logotipo
                     });
                 }
