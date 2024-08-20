@@ -160,7 +160,7 @@ sw.get('/listjogadores', function (req, res, next) {
 });
 
 
-sw.post('insertpatentes', function (req, res, next) {
+sw.post('/insertpatentes', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
         if (err) {
@@ -184,7 +184,12 @@ sw.post('insertpatentes', function (req, res, next) {
                     res.status(400).send('{' + err + '}');
                 } else {
                     console.log('retornou 201 no insertpatente');
-                    res.status.send({});
+                    res.status(201).send({
+                        "codigo": result1.rows[0].codigo, "nome": result1.rows[0].nome,
+                        "quant_min_pontos": result1.rows[0].quant_min_pontos,
+                         "cor": result1.rows[0].cor,
+                          "logotipo": result1.rows[0].logotipo
+                    });
                 }
 
             })
