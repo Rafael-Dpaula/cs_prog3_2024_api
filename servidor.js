@@ -160,6 +160,23 @@ sw.get('/listjogadores', function (req, res, next) {
 });
 
 
+sw.post('insertpatente', function ( req, res, next) {
+
+    postgres.connect(function(err,client, done){
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: "insert into tb_patente(nome, quant_min_pontos, datacriacao, cor, logotipo) values ($1, $2, now(), $3, $4) returning codigo, nome, quant_min_;"
+
+            }
+        }
+    })
+});
+
 
 sw.listen(4000, function () {
     console.log('Server is running.. on Port 4000');
