@@ -261,6 +261,85 @@ sw.get('/deletepatentes/:codigo', function (req, res, next) {
     });
 });
 
+sw.post('/insertjogador', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: 'insert into tb_jogador (nickname, senha, quantPontos, quantdinheiro, datacadastro, ' +
+                    ' situacao) ' +
+                    ' values ($1,$2,$3,$4,now(), $5) ' +
+                    'returning nickname, senha, quantpontos, quantdinheiro, ' +
+                    ' to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro, ' +
+                    ' to_char(data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, situacao;',
+                values: [req.body.nickname,
+                req.body.senha,
+                req.body.quantpontos,
+                req.body.quantdinheiro,
+                req.body.situacao == true ? "A" : "I"]
+            }
+            var q2 = {
+                text: 'insert into tb_endereco (complemento, cep, nicknamejogador) values ($1, $2, $3) returning codigo, complemento, cep;',
+                values: [req.body.endereco.complemento,
+                req.body.endereco.cep,
+                req.body.nickname]
+            }
+            
+            console.log(q1);
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    
+
+                    client.query(q2, async function (err, result2) {
+                        if (err) {
+                            console.log('retornou 400 no insert q2');
+                            res.status(400).send('{' + err + '}');
+                        } else {
+                            //insere todas as pantentes na tabela associativa.
+                            for (var i = 0; i < req.body.patentes.length; i++) {
+
+                                try {
+                                    pj = await client.query('insert into tb_jogador_conquista_patente (codpatente, nickname), values ($1, $2)', [req.body.patentes[i].codigo, req.body.nickname])
+
+                                } catch (err) {
+
+                                    res.status(400).send('{' + err + '}');
+                                }
+
+                            }
+
+                            done(); // closing the connection;
+                            console.log('retornou 201 no insertjogador');
+                            res.status(201).send({
+                                "nickname": result1.rows[0].nickname,
+                                "senha": result1.rows[0].senha,
+                                "quantpontos": result1.rows[0].quantpontos,
+                                "quantdinheiro": result1.rows[0].quantdinheiro,
+                                "situacao": result1.rows[0].situacao,
+                                "datacadastro": result1.rows[0].datacadastro,
+                                "data_ultimo_login": result1.rows[0].data_ultimo_login,
+                                "endereco": { "codigo": result2.rows[0].codigo, "cep": result2.rows[0].cep, "complemento": result2.rows[0].complemento },
+                                "patentes": req.body.patentes
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+
+
 sw.listen(4000, function () {
     console.log('Server is running.. on Port 4000');
 });
