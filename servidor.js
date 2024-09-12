@@ -272,12 +272,7 @@ sw.post('/insertjogador', function (req, res, next) {
         } else {
 
             var q1 = {
-                text: 'insert into tb_jogador (nickname, senha, quantPontos, quantdinheiro, datacadastro, ' +
-                    ' situacao) ' +
-                    ' values ($1,$2,$3,$4,now(), $5) ' +
-                    'returning nickname, senha, quantpontos, quantdinheiro, ' +
-                    ' to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro, ' +
-                    ' to_char(data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, situacao;',
+                text: 'insert into tb_jogador (nickname, senha, quantPontos, quantdinheiro, datacadastro, situacao)  values ($1,$2,$3,$4,now(), $5) returning nickname, senha, quantpontos, quantdinheiro,  to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro,  to_char(data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, situacao;',
                 values: [req.body.nickname,
                 req.body.senha,
                 req.body.quantpontos,
@@ -291,23 +286,24 @@ sw.post('/insertjogador', function (req, res, next) {
                 req.body.nickname]
             }
             
-            console.log(q1);
-
+            console.log("q1 passou");
+            
             client.query(q1, function (err, result1) {
                 if (err) {
                     console.log('retornou 400 no insert q1');
                     res.status(400).send('{' + err + '}');
                 } else {
                     
-
+                    
                     client.query(q2, async function (err, result2) {
                         if (err) {
                             console.log('retornou 400 no insert q2');
                             res.status(400).send('{' + err + '}');
                         } else {
+                            console.log("q2 passou");
                             //insere todas as pantentes na tabela associativa.
                             for (var i = 0; i < req.body.patentes.length; i++) {
-
+                                
                                 try {
                                     pj = await client.query('insert into tb_jogador_conquista_patente (codpatente, nickname), values ($1, $2)', [req.body.patentes[i].codigo, req.body.nickname])
 
@@ -317,7 +313,7 @@ sw.post('/insertjogador', function (req, res, next) {
                                 }
 
                             }
-
+                            
                             done(); // closing the connection;
                             console.log('retornou 201 no insertjogador');
                             res.status(201).send({
