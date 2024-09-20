@@ -252,6 +252,107 @@ sw.post('/updatemapa', function (req, res, next) {
     });
 });
 
+sw.get('/listjogador', function (req, res) {
+
+    //estabelece uma conexao 'com o bd.
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Não conseguiu acessar o BD :" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+
+            client.query('select j.nickname, j.senha, j.quantpontos, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, j.situacao, e.cep, e.complemento, e.codigo, 0 as patentes from tb_jogador j left join tb_endereco e on (j.nickname=e.nicknamejogador) order by j.datacadastro asc;', async function (err, result) {
+                //done(); // closing the connection;
+                if (err) {
+                    console.log(err);
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    for (var i = 0; i < result.rows.length; i++) {
+
+                        try {
+
+                            pj = await client.query('select p.codigo, p.nome from tb_patente p, tb_jogador_conquista_patente jp where jp.codpatente=p.codigo and jp.nickname = $1', [result.rows[i].nickname])
+
+                            result.rows[i].patentes = pj.rows;
+
+                        } catch (err) {
+
+                            res.status(400).send('{' + err + '}');
+                        }
+
+                    }
+
+                    done();  // closing the connection;
+                    res.status(200).send(result.rows);
+                }
+
+            });
+        }
+    });
+});
+
+sw.get('/listjogador/:nickname', function (req, res) { // NÃO PRECISA DOS ":" NO INSOMNIA!!!!! ELES CAUSAM ERRO!!!! SO COLOCA O NICKNAME DPS DA BARRA!!!!
+
+    //estabelece uma conexao com o bd.
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Não conseguiu acessar o BD :" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'select j.nickname, j.senha, j.quantpontos, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, j.situacao, e.cep, e.complemento, e.codigo, 0 as patentes from tb_jogador j left join tb_endereco e on (j.nickname=e.nicknamejogador) where nickname = $1 order by j.datacadastro asc;',
+                values: [req.params.nickname]
+            } // query com o endereço incluido já
+
+            var q2 = {
+                text: 'select p.codigo, p.nome from tb_patente p, tb_jogador_conquista_patente jp where jp.codpatente=p.codigo and jp.nickname = $1',
+                values: [req.params.nickname] // pega todas as patentes relacionadas ao nickname
+            }
+
+            client.query(q, async function (err, result) { //testa se retorna no select de jogador e endereco para nickname
+                //done(); // closing the connection;
+                if (err) {
+                    console.log(err);
+                    res.status(500).send('{' + err + '}');
+                } else {
+
+                    client.query(q2, async function (err, result1) { //testa se pegou todas as patentes do nickname
+
+                        if (err) {
+                            console.log(err);
+                            res.status(500).send('{' + err + '}');
+                        } else {
+
+                            done();  // closing the connection;                    
+                            res.status(200).send({
+                                "nickname": result.rows[0].nickname,
+                                "senha": result.rows[0].senha,
+                                "quantpontos": result.rows[0].quantpontos,
+                                "quantdinheiro": result.rows[0].quantdinheiro,
+                                "situacao": result.rows[0].situacao,
+                                "datacadastro": result.rows[0].datacadastro,
+                                "data_ultimo_login": result.rows[0].data_ultimo_login,
+                                "endereco": { "codigo": result.rows[0].codigo, "cep": result.rows[0].cep, "complemento": result.rows[0].complemento }, //mostra o endereco daquele nickname que só pode ter 1, vem como objeto
+                                "patentes": result1.rows //mostra todas as patentes daquele nickname, é um array de objetos
+                            });
+
+                        }
+                    });
+
+                }
+
+            });
+        }
+    });
+});
+
 sw.post('/insertjogador', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
@@ -325,6 +426,153 @@ sw.post('/insertjogador', function (req, res, next) {
         }
     });
 });
+
+sw.post('/updatejogador', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: 'update tb_jogador set senha = $1, quantPontos = $2, quantdinheiro = $3, situacao = $4 where nickname = $5 ' +
+                    'returning nickname, senha, quantpontos, quantdinheiro, to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro, situacao;',
+                values: [
+                    req.body.senha,
+                    req.body.quantpontos,
+                    req.body.quantdinheiro,
+                    req.body.situacao === "A" ? "A" : "I",
+                    req.body.nickname] // faz update em todos os parametros menos no nome, usando ele de parametro de filtragem
+            }
+            var q2 = {
+                text: 'update tb_endereco set complemento = $1, cep = $2 where nicknamejogador = $3 returning codigo, complemento, cep;',
+                values: [req.body.endereco.complemento,
+                req.body.endereco.cep,
+                req.body.nickname]// faz update em todos os campos e usa o nickname que é a chave estrangeira para filtrar
+            }
+            console.log(q1);
+            console.log(q2);
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no update');
+                    console.log(err)
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    client.query(q2, async function (err, result2) {
+                        if (err) {
+                            console.log(err);
+                            console.log('retornou 400 no updatejogador');
+                            res.status(400).send('{' + err + '}');
+                        } else {
+
+
+                            try {
+                                //remove todas as patentes
+                                await client.query('delete from tb_jogador_conquista_patente jp where jp.nickname = $1', [req.body.nickname]) // deleta tudo para colocar manualmente as patentes
+
+                                //insere todas as pantentes na tabela associativa.
+                                for (var i = 0; i < req.body.patentes.length; i++) {
+
+                                    try {
+
+                                        await client.query('insert into tb_jogador_conquista_patente (codpatente, nickname) values ($1, $2)', [req.body.patentes[i].codigo, req.body.nickname]) //insere as patentes pelo codigo colocados no JSON do body do insomnia
+
+                                    } catch (err) {
+
+                                        res.status(400).send('{' + err + '}');
+                                    }
+
+                                }
+
+                            } catch (err) {
+
+                                res.status(400).send('{' + err + '}');
+                            }
+
+                            done(); // closing the connection;
+
+                            console.log('retornou 201 no updatejogador');
+                            res.status(201).send({
+                                "nickname": result1.rows[0].nickname,
+                                "senha": result1.rows[0].senha,
+                                "quantpontos": result1.rows[0].quantpontos,
+                                "quantdinheiro": result1.rows[0].quantdinheiro,
+                                "situacao": result1.rows[0].situacao,
+                                "datacadastro": result1.rows[0].datacadastro,
+                                "data_ultimo_login": result1.rows[0].data_ultimo_login,
+                                "endereco": { "codigo": result2.rows[0].codigo, "cep": result2.rows[0].cep, "complemento": result2.rows[0].complemento },
+                                "patentes": req.body.patentes
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+
+sw.get('/deletejogador/:nickname', (req, res) => {  // NÃO PRECISA DOS ":" NO INSOMNIA!!!!! ELES CAUSAM ERRO!!!! SO COLOCA O NICKNAME DPS DA BARRA!!!!
+
+    postgres.connect(function (err, client, done) {
+        if (err) {
+            console.log("Não conseguiu acessar o banco de dados!" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q0 = {
+                text: 'delete FROM tb_jogador_conquista_patente where nickname = $1',
+                values: [req.params.nickname] // deleta tudo do nickname da associativa entre jogador e patente primeiro
+            }
+
+            var q1 = {
+                text: 'delete FROM tb_endereco where nicknamejogador = $1',
+                values: [req.params.nickname] // deleta todos os enderecos do nickname
+            }
+            var q2 = {
+                text: 'delete FROM tb_jogador where nickname = $1',
+                values: [req.params.nickname] // deleta tudo do nickname do jogador
+            }
+
+            client.query(q0, function (err, result) { // testa se deletou da associativa
+
+                if (err) {
+                    console.log(err);
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    client.query(q1, function (err, result) { // testa se deletou do endereco
+
+                        if (err) {
+                            console.log(err);
+                            res.status(400).send('{' + err + '}');
+                        } else {
+                            client.query(q2, function (err, result) { // testa se deletou de jogador
+                                done();// closing the connection;
+                                if (err) {
+                                    console.log(err);
+                                    res.status(400).send('{' + err + '}');
+                                } else {
+                                    res.status(200).send({ 'nickname': req.params.nickname });//retorna o nickname deletado.
+                                }
+                            })
+                        }
+                    });
+
+
+                }
+
+            });
+
+
+        }
+    });
+});
+
+
 
 sw.listen(666, function () {
     console.log('Server is running.. on Port 666');
