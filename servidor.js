@@ -335,6 +335,156 @@ sw.post('/insertjogador', function (req, res, next) {
     });
 });
 
+sw.get('/listendereco', function (req, res) {
+
+    //estabelece uma conexao 'com o bd.
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Não conseguiu acessar o BD :" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+
+            client.query('select codigo, complemento, cep, nicknamejogador, 0 as jogador from tb_endereco ', async function (err, result) {
+                //done(); // closing the connection;
+                if (err) {
+                    console.log(err);
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    for (var i = 0; i < result.rows.length; i++) {
+
+                        try {
+
+                            jo = await client.query('select * from'
+                                + ' tb_jogador '
+                                + 'where nickname = $1', [result.rows[i].nicknamejogador])
+                            result.rows[i].jogador = jo.rows;
+
+                        } catch (err) {
+
+                            res.status(400).send('{' + err + '}');
+                        }
+
+                    }
+
+                    done();  // closing the connection;
+                    res.status(200).send(result.rows);
+                }
+
+            });
+        }
+    });
+});
+
+sw.post('/insertendereco', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: 'insert into tb_endereco (complemento, cep, nicknamejogador) values ($1, $2, $3) returning codigo, complemento, cep, nicknamejogador;',
+                values: [req.body.complemento,
+                req.body.cep,
+                req.body.nicknamejogador]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no insertendereco');
+                            res.status(201).send({
+                                "complemento": result1.rows[0].complemento,
+                                "cep": result1.rows[0].cep,
+                                "nicknamejogador": result1.rows[0].nicknamejogador
+                            });
+                }
+            });
+        }
+    });
+});
+
+sw.post('/updateendereco', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'update tb_endereco set complemento = $1, cep = $2 where nicknamejogador = $3 returning complemento, cep, nicknamejogador',
+                values: [req.body.complemento,
+                req.body.cep,
+                req.body.nicknamejogador]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no updateendereco');
+                            res.status(201).send({
+                                "complemento": result.rows[0].complemento,
+                                "cep": result.rows[0].cep,
+                                "nicknamejogador": result.rows[0].nicknamejogador
+                            });
+                }
+            });
+        }
+    });
+});
+
+sw.get('/deleteendereco/:codigo', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'delete from tb_endereco where codigo = $1',
+                values: [req.params.codigo],
+                
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no delete q');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no deleteendereco');
+                            res.status(200).send({ 'codigo': req.params.codigo })
+                }
+            });
+        }
+    });
+});
+
 
 sw.listen(4000, function () {
     console.log('Server is running.. on Port 4000');

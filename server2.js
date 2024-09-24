@@ -252,48 +252,57 @@ sw.post('/updatemapa', function (req, res, next) {
     });
 });
 
-sw.get('/listjogador', function (req, res) {
+sw.get('/listjogador', function (req, res, next) {
 
-    //estabelece uma conexao 'com o bd.
     postgres.connect(function (err, client, done) {
 
         if (err) {
 
-            console.log("Não conseguiu acessar o BD :" + err);
+            console.log("Nao conseguiu acessar o  BD " + err);
             res.status(400).send('{' + err + '}');
         } else {
 
+            var q = "select nickname,senha,quantpontos,quantdinheiro,to_char(datacadastro, 'dd/mm/yyyy hh24:mi:ss') " +
+                "as datacadastro,to_char(data_ultimo_login, 'dd/mm/yyyy hh24:mi:ss') as data_ultimo_login,situacao," +
+                " 0 as patentes, 0 as endereco from tb_jogador j order by nickname asc"
 
-            client.query('select j.nickname, j.senha, j.quantpontos, j.quantdinheiro, to_char(j.datacadastro, \'dd/mm/yyyy\') as datacadastro, to_char(j.data_ultimo_login, \'dd/mm/yyyy\') as data_ultimo_login, j.situacao, e.cep, e.complemento, e.codigo, 0 as patentes from tb_jogador j left join tb_endereco e on (j.nickname=e.nicknamejogador) order by j.datacadastro asc;', async function (err, result) {
-                //done(); // closing the connection;
+            client.query(q, async function (err, result) {
                 if (err) {
-                    console.log(err);
+
                     res.status(400).send('{' + err + '}');
                 } else {
 
                     for (var i = 0; i < result.rows.length; i++) {
-
                         try {
-
-                            pj = await client.query('select p.codigo, p.nome from tb_patente p, tb_jogador_conquista_patente jp where jp.codpatente=p.codigo and jp.nickname = $1', [result.rows[i].nickname])
-
+                            pj = await client.query('select codpatente from'
+                                + ' tb_jogador_conquista_patente '
+                                + 'where nickname = $1', [result.rows[i].nickname])
                             result.rows[i].patentes = pj.rows;
-
                         } catch (err) {
-
-                            res.status(400).send('{' + err + '}');
+                            res.status(400).send('{' + err + '}')
                         }
 
-                    }
+                    };
 
-                    done();  // closing the connection;
-                    res.status(200).send(result.rows);
+                    for (var i = 0; i < result.rows.length; i++) {
+                        try {
+                            ej = await client.query('select * from'
+                                + ' tb_endereco '
+                                + 'where nicknamejogador = $1', [result.rows[i].nickname])
+                            result.rows[i].endereco = ej.rows;
+                        } catch (err) {
+
+                            res.status(400).send('{' + err + '}')
+                        }
+                    };
+                    done(); // closing the connection;
+                    res.status(201).send(result.rows);
                 }
-
             });
         }
     });
 });
+
 
 sw.get('/listjogador/:nickname', function (req, res) { // NÃO PRECISA DOS ":" NO INSOMNIA!!!!! ELES CAUSAM ERRO!!!! SO COLOCA O NICKNAME DPS DA BARRA!!!!
 
@@ -377,16 +386,16 @@ sw.post('/insertjogador', function (req, res, next) {
                 req.body.endereco.cep,
                 req.body.nickname]
             }
-            
+
             console.log("q1 passou");
-            
+
             client.query(q1, function (err, result1) {
                 if (err) {
                     console.log('retornou 400 no insert q1');
                     res.status(400).send('{' + err + '}');
                 } else {
-                    
-                    
+
+
                     client.query(q2, async function (err, result2) {
                         if (err) {
                             console.log('retornou 400 no insert q2');
@@ -395,7 +404,7 @@ sw.post('/insertjogador', function (req, res, next) {
                             console.log("q2 passou");
                             //insere todas as pantentes na tabela associativa.
                             for (var i = 0; i < req.body.patentes.length; i++) {
-                                
+
                                 try {
                                     pj = await client.query('insert into tb_jogador_conquista_patente (codpatente, nickname) values ($1, $2)', [req.body.patentes[i].codigo, req.body.nickname])
 
@@ -405,7 +414,7 @@ sw.post('/insertjogador', function (req, res, next) {
                                 }
 
                             }
-                            
+
                             done(); // closing the connection;
                             console.log('retornou 201 no insertjogador');
                             res.status(201).send({
@@ -418,7 +427,7 @@ sw.post('/insertjogador', function (req, res, next) {
                                 "data_ultimo_login": result1.rows[0].data_ultimo_login,
                                 "endereco": { "codigo": result2.rows[0].codigo, "cep": result2.rows[0].cep, "complemento": result2.rows[0].complemento },
                                 "patentes": req.body.patentes
-                        });
+                            });
                         }
                     });
                 }
@@ -572,6 +581,155 @@ sw.get('/deletejogador/:nickname', (req, res) => {  // NÃO PRECISA DOS ":" NO I
     });
 });
 
+sw.get('/listendereco', function (req, res) {
+
+    //estabelece uma conexao 'com o bd.
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Não conseguiu acessar o BD :" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+
+            client.query('select codigo, complemento, cep, nicknamejogador, 0 as jogador from tb_endereco ', async function (err, result) {
+                //done(); // closing the connection;
+                if (err) {
+                    console.log(err);
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    for (var i = 0; i < result.rows.length; i++) {
+
+                        try {
+
+                            jo = await client.query('select * from'
+                                + ' tb_jogador '
+                                + 'where nickname = $1', [result.rows[i].nicknamejogador])
+                            result.rows[i].jogador = jo.rows;
+
+                        } catch (err) {
+
+                            res.status(400).send('{' + err + '}');
+                        }
+
+                    }
+
+                    done();  // closing the connection;
+                    res.status(200).send(result.rows);
+                }
+
+            });
+        }
+    });
+});
+
+sw.post('/insertendereco', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: 'insert into tb_endereco (complemento, cep, nicknamejogador) values ($1, $2, $3) returning codigo, complemento, cep, nicknamejogador;',
+                values: [req.body.complemento,
+                req.body.cep,
+                req.body.nicknamejogador]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no insertendereco');
+                            res.status(201).send({
+                                "complemento": result1.rows[0].complemento,
+                                "cep": result1.rows[0].cep,
+                                "nicknamejogador": result1.rows[0].nicknamejogador
+                            });
+                }
+            });
+        }
+    });
+});
+
+sw.post('/updateendereco', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'update tb_endereco set complemento = $1, cep = $2 where nicknamejogador = $3 returning complemento, cep, nicknamejogador',
+                values: [req.body.complemento,
+                req.body.cep,
+                req.body.nicknamejogador]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no updateendereco');
+                            res.status(201).send({
+                                "complemento": result.rows[0].complemento,
+                                "cep": result.rows[0].cep,
+                                "nicknamejogador": result.rows[0].nicknamejogador
+                            });
+                }
+            });
+        }
+    });
+});
+
+sw.get('/deleteendereco/:codigo', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'delete from tb_endereco where codigo = $1',
+                values: [req.params.codigo],
+                
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no delete q');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                            done(); // closing the connection;
+                            console.log('retornou 201 no deleteendereco');
+                            res.status(200).send({ 'codigo': req.params.codigo })
+                }
+            });
+        }
+    });
+});
 
 
 sw.listen(666, function () {
