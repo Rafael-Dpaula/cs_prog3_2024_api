@@ -21,34 +21,177 @@
             <ul class="nav nav-pills nav-stacked">
                 <li class="active"><a data-toggle="pill" href="#home">Autenticação</a></li>
                 <li><a data-toggle="pill" href="#menu1">Patentes</a></li>
-                <li><a data-toggle="pill" href="#menu2">Sair</a></li>
+                <li><a data-toggle="pill" href="#menu2">jogadores</a></li>
+                <li><a data-toggle="pill" href="#menu3">Sair</a></li>
             </ul>
         </div>
 
         <div class="col-xs-6">
             <div class="tab-content" id="app">
 
-                <div id="home" class="tab-pane fade in active" v-if="!form_autenticacao.datacadastro">
+                <div id="home" class="tab-pane fade in active">
                     <h3>Autenticacação</h3>
-                    <div class="form-outline mb-4">
+                    <!--<div class="form-outline mb-4">
                         <label class="form-label" for="inputANickname">Nickname:</label>
                         <input type="text" v-model="form_autenticacao.nickname" class="form-control"
                             id="inputANickname">
-                    </div>
+                    </div>-->
                 </div>
 
                 <div id="menu1" class="tab-pane">
                     <h3>Patentes</h3>
+
+                    <table class="table table-striped">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Quant M. Pontos</th>
+                            <th scope="col">Data</th>
+                            <th scope="col">Cor</th>
+                            <th scope="col">Logotipo</th>
+                            <th scope="col">Alterar</th>
+                            <th scope="col">Remover</th>
+                        </tr>
+                        <tbody>
+                            <tr v-for="(p, indice) in patentes">
+                                <td>{{p.codigo}}</td>
+                                <td>{{p.nome}}</td>
+                                <td>{{p.quant_min_pontos}}</td>
+                                <td>{{p.datacriacao}}</td>
+                                <td>{{p.cor}}</td>
+                                <td>{{p.logotipo}}</td>
+                                <td><button v-on:click="ediPatente(indice, p.codigo)" class="btn"
+                                        type="button">Alterar</button></td>
+                                <td><button v-on:click="remPatente(indice, p.codigo)" class="btn"
+                                        type="button">Remover</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
                 </div>
 
-                <div id="menu2" class="tab-pane">
-                    <h3>Sair</h3>
+                <div id="menu2" class="tab-pane fade">
+
+                    <h2>jogadores</h2>
+
+                    <table class="table table-striped">
+                        <tr>
+                            <th scope="col">NickName</th>
+                            <th scope="col">Data de Cadastro</th>
+                            <th scope="col">Quantidade de Pontos</th>
+                            <th scope="col">Endereço</th>
+                            <th scope="col">Situação</th>
+                            <th scope="col">Alterar</th>
+                            <th scope="col">Remover</th>
+                        </tr>
+                        <tbody>
+                            <tr v-for="(j, indice) in jogadores">
+                                <td>{{j.nickname}}</td>
+                                <td>{{j.datacadastro}}</td>
+                                <td>{{j.quantpontos}}</td>
+                                <td>{{j.endereco.cep}}</td>
+                                <td v-if="j.situacao == 'A'"><input type="checkbox" checked disabled></td>
+                                <td v-if="j.situacao == 'I'"><input type="checkbox" disabled></td>
+                                <td><button v-on:click="editJogador(indice)" class="btn" type="button">Alterar</button>
+                                </td>
+                                <td><button v-on:click="remJogador(indice)" class="btn" type="button">Remover</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div id="menu3" class="tab-pane">
+                        <h3>Sair</h3>
+                    </div>
                 </div>
+
             </div>
-
         </div>
-    </div>
 
 </body>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        var patentes = [];
+
+        var jogadores = [];
+
+
+        var dados = {
+            "patentes": patentes,
+
+            "jogadores": jogadores,
+
+            nova_patente: {
+                codigo: '',
+                nome: '',
+                quant_min_pontos: '',
+                datacadastro: '',
+                cor: '',
+                logotipo: ''
+            }
+        }
+
+
+
+        Vue.filter('formataData', function (value) { /// formatação de data
+            var data = new Date(value);
+            data.setDate(data.getDate() + 1); //incrementa a data em um dia para mostrar corretamente (pode nao ser necessário)              
+            dia = (data.getDate()).toString().padStart(2, '0'),
+                mes = (data.getMonth() + 1).toString().padStart(2, '0'), //+1 pois no getMonth Janeiro começa com zero.                
+                ano = data.getFullYear();
+            return dia + "/" + mes + "/" + ano;
+        })
+
+        Vue.prototype.$http = axios;
+
+
+        new Vue({
+            el: app,
+            data: dados,
+            methods: { // bloco de metodos
+
+            },
+
+            created: function () {
+
+                this.$http.get('http://localhost:4000/listpatentes')
+                    .then(response => {
+
+                        for (let p of response.data) {
+
+                            this.patentes.push({
+                                "codigo": p.codigo,
+                                "nome": p.nome,
+                                "quant_min_pontos": p.quant_min_pontos,
+                                "datacriacao": p.datacriacao,
+                                "cor": p.cor,
+                                "logotipo": p.logotipo
+
+                            });
+
+                        }
+
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listpatente');
+                        console.log(response);
+                    });
+
+            }
+
+        
+
+
+
+
+
+
+            
+        });
+    });
+
+</script>
 
 </html>

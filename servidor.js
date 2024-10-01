@@ -100,7 +100,7 @@ sw.get('/listpatentes', function (req, res, next) {
             res.status(400).send('{' + err + '}');
         } else {
 
-            var q = 'select codigo as id, nome, quant_min_pontos, to_char(datacriacao, \'dd/mm/yyyy hh24:mm:ss\') as DataCriacao, cor, logotipo from tb_patente order by codigo asc';
+            var q = 'select codigo, nome, quant_min_pontos, to_char(datacriacao, \'dd/mm/yyyy\') as datacriacao, cor, logotipo from tb_patente order by codigo asc';
 
             client.query(q, function (err, result) {
                 done(); // closing the connection;
