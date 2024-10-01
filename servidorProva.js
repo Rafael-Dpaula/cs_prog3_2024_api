@@ -194,11 +194,11 @@ sw.post('/insertjogador', function (req, res, next) {
                             console.log('retornou 201 no insertjogador');
                             res.status(201).send({
                                 "nickname": result1.rows[0].nickname,
-                                "senha": result1.rows[0].senha,
+                                "datacadastro": result1.rows[0].datacadastro,
                                 "quantpontos": result1.rows[0].quantpontos,
                                 "quantdinheiro": result1.rows[0].quantdinheiro,
                                 "situacao": result1.rows[0].situacao,
-                                "endereco": { "codigo": result2.rows[0].codigo, "cep": result2.rows[0].cep, "complemento": result2.rows[0].complemento },
+                                "endereco": { "cep": result2.rows[0].cep, "complemento": result2.rows[0].complemento },
                                 "patentes": req.body.patentes
                             });
                         }
@@ -320,7 +320,7 @@ sw.get('/listmapas', function (req, res, next) {
             res.status(400).send('{' + err + '}');
         } else {
 
-            var q = 'select codigo, nome , to_char(datacadastromapa, \'dd/mm/yyyy hh24:mm:ss\')as datacadastromapa, status, 0 as modo, 0 as locais from tb_mapa order by codigo asc';
+            var q = 'select codigo, nome , to_char(datacadastromapa, \'dd/mm/yyyy\')as datacadastromapa, status, 0 as modo, 0 as locais from tb_mapa order by codigo asc';
 
             client.query(q, async function (err, result) {
 
