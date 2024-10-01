@@ -148,7 +148,7 @@ sw.post('/insertjogador', function (req, res, next) {
         } else {
 
             var q1 = {
-                text: 'insert into tb_jogador (nickname, senha, quantpontos, quantdinheiro, datacadastro, situacao) values ($1,$2,$3,$4, now(), $5) returning nickname, senha, quantpontos, quantdinheiro, to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro, situacao;',
+                text: 'insert into tb_jogador (nickname, senha, quantpontos, quantdinheiro, datacadastro, situacao) values ($1,$2,$3,$4, now(), $5) returning nickname, quantpontos, quantdinheiro, to_char(datacadastro, \'dd/mm/yyyy\') as datacadastro, situacao;',
                 values: [req.body.nickname,
                 req.body.senha,
                 req.body.quantpontos,
@@ -156,7 +156,7 @@ sw.post('/insertjogador', function (req, res, next) {
                 req.body.situacao === "A" ? "A" : "I"]
             }
             var q2 = {
-                text: 'insert into tb_endereco (complemento, cep, nicknamejogador) values ($1, $2, $3) returning codigo, complemento, cep;',
+                text: 'insert into tb_endereco (complemento, cep, nicknamejogador) values ($1, $2, $3) returning complemento, cep;',
                 values: [req.body.endereco.complemento,
                 req.body.endereco.cep,
                 req.body.nickname]
