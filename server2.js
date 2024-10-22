@@ -68,7 +68,7 @@ sw.get('/listlocais', function (req, res, next) {
             res.status(400).send('{' + err + '}');
         } else {
 
-            var q = 'select nome, statuslocal from tb_local';
+            var q = 'select codigo, nome, statuslocal from tb_local';
 
             client.query(q, function (err, result) {
                 done(); // closing the connection;
@@ -246,6 +246,35 @@ sw.post('/updatemapa', function (req, res, next) {
                         "status": result.rows[0].status,
                         "datacadastromapa": result.rows[0].datacadastromapa
                     });
+                }
+            });
+        }
+    });
+});
+
+sw.get('/listpatentes', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = 'select codigo, nome, quant_min_pontos, to_char(datacriacao, \'dd/mm/yyyy\') as datacriacao, cor, logotipo from tb_patente order by codigo asc';
+
+            client.query(q, function (err, result) {
+                done(); // closing the connection;
+                if (err) {
+                    console.log('retornou 400 no listpatente');
+                    console.log(err);
+
+                    res.status(400).send('{' + err + '}');
+                } else {
+
+                    //console.log('retornou 201 no /listendereco');
+                    res.status(201).send(result.rows);
                 }
             });
         }
@@ -732,6 +761,6 @@ sw.get('/deleteendereco/:codigo', function (req, res, next) {
 });
 
 
-sw.listen(666, function () {
-    console.log('Server is running.. on Port 666');
+sw.listen(4000, function () {
+    console.log('Server is running.. on Port 4000');
 });
