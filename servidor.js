@@ -691,7 +691,7 @@ sw.get('/listlocais', function (req, res, next) {
             res.status(400).send('{' + err + '}');
         } else {
 
-            var q = 'select nome, statuslocal from tb_local';
+            var q = 'select nome, codigo, statuslocal from tb_local';
 
             client.query(q, function (err, result) {
                 done(); // closing the connection;
