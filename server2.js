@@ -86,6 +86,110 @@ sw.get('/listlocais', function (req, res, next) {
     });
 });
 
+sw.post('/insertlocal', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: 'insert into tb_local(nome, statuslocal) values ($1, $2) returning codigo, nome, statuslocal;',
+                values: [req.body.nome,
+                req.body.statuslocal]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    done(); // closing the connection;
+                    console.log('retornou 201 no insertendereco');
+                    res.status(201).send({
+                        "nome": result1.rows[0].nome,
+                        "statuslocal": result1.rows[0].statuslocal,
+                    });
+                }
+            });
+        }
+    });
+});
+
+sw.get('/deletelocal/:codigo', (req, res) => {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'delete from tb_local where codigo = $1',
+                values: [req.params.codigo],
+
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no delete q');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    done(); // closing the connection;
+                    console.log('retornou 201 no deletelocal');
+                    res.status(200).send({ 'codigo': req.params.codigo })
+                }
+            });
+        }
+    });
+});
+
+sw.post('/updatelocal', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'update tb_local set nome = $1, statuslocal = $2 where codigo = $3 returning nome, statuslocal, codigo',
+                values: [req.body.nome,
+                req.body.statuslocal,
+                req.body.codigo]
+            }
+
+            console.log("q1 passou");
+
+            client.query(q, function (err, result) {
+                if (err) {
+                    console.log('retornou 400 no insert q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    done(); // closing the connection;
+                    console.log('retornou 201 no updatelocal');
+                    res.status(201).send({
+                        "nome": result.rows[0].nome,
+                        "statuslocal": result.rows[0].statuslocal,
+                        "codigo": result.rows[0].codigo
+                    });
+                }
+            });
+        }
+    });
+});
+
 
 sw.get('/listmapas', function (req, res, next) {
 
@@ -678,13 +782,13 @@ sw.post('/insertendereco', function (req, res, next) {
                     console.log('retornou 400 no insert q1');
                     res.status(400).send('{' + err + '}');
                 } else {
-                            done(); // closing the connection;
-                            console.log('retornou 201 no insertendereco');
-                            res.status(201).send({
-                                "complemento": result1.rows[0].complemento,
-                                "cep": result1.rows[0].cep,
-                                "nicknamejogador": result1.rows[0].nicknamejogador
-                            });
+                    done(); // closing the connection;
+                    console.log('retornou 201 no insertendereco');
+                    res.status(201).send({
+                        "complemento": result1.rows[0].complemento,
+                        "cep": result1.rows[0].cep,
+                        "nicknamejogador": result1.rows[0].nicknamejogador
+                    });
                 }
             });
         }
@@ -715,13 +819,13 @@ sw.post('/updateendereco', function (req, res, next) {
                     console.log('retornou 400 no insert q1');
                     res.status(400).send('{' + err + '}');
                 } else {
-                            done(); // closing the connection;
-                            console.log('retornou 201 no updateendereco');
-                            res.status(201).send({
-                                "complemento": result.rows[0].complemento,
-                                "cep": result.rows[0].cep,
-                                "nicknamejogador": result.rows[0].nicknamejogador
-                            });
+                    done(); // closing the connection;
+                    console.log('retornou 201 no updateendereco');
+                    res.status(201).send({
+                        "complemento": result.rows[0].complemento,
+                        "cep": result.rows[0].cep,
+                        "nicknamejogador": result.rows[0].nicknamejogador
+                    });
                 }
             });
         }
@@ -741,7 +845,7 @@ sw.get('/deleteendereco/:codigo', function (req, res, next) {
             var q = {
                 text: 'delete from tb_endereco where codigo = $1',
                 values: [req.params.codigo],
-                
+
             }
 
             console.log("q1 passou");
@@ -751,9 +855,9 @@ sw.get('/deleteendereco/:codigo', function (req, res, next) {
                     console.log('retornou 400 no delete q');
                     res.status(400).send('{' + err + '}');
                 } else {
-                            done(); // closing the connection;
-                            console.log('retornou 201 no deleteendereco');
-                            res.status(200).send({ 'codigo': req.params.codigo })
+                    done(); // closing the connection;
+                    console.log('retornou 201 no deleteendereco');
+                    res.status(200).send({ 'codigo': req.params.codigo })
                 }
             });
         }
@@ -762,5 +866,5 @@ sw.get('/deleteendereco/:codigo', function (req, res, next) {
 
 
 sw.listen(4000, function () {
-    console.log('Server is running.. on Port 4000');
+    console.log('Server is running.. on Port 4000 q funfa no notebook');
 });

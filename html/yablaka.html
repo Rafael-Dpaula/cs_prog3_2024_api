@@ -162,8 +162,10 @@
                                 <td>{{l.nome}}</td>
                                 <td v-if="l.statuslocal == true"><input type="checkbox" checked disabled></td>
                                 <td v-if="l.statuslocal == false"><input type="checkbox" disabled></td>
-                                <td><button v-on:click="ediLocal(indice, l.codigo)" class="btn" type="button">Alterar</button></td>
-                                <td><button v-on:click="remLocal(indice, l.codigo)" class="btn" type="button">Remover</button></td>
+                                <td><button v-on:click="editLocal(indice, l.codigo)" class="btn"
+                                        type="button">Alterar</button></td>
+                                <td><button v-on:click="remLocal(indice, l.codigo)" class="btn"
+                                        type="button">Remover</button></td>
                             </tr>
                         </tbody>
                     </table>
@@ -178,7 +180,7 @@
                                 <input type="checkbox" id="status" v-model="novo_local.statuslocal">
                             </div>
 
-                            <button @click="addlocal" class="btn btn-primary" type="button">Salvar</button>
+                            <button @click="addLocal" class="btn btn-primary" type="button">Salvar</button>
                             <button @click="cleanFormularioLocal" class="btn btn-primary" type="button">Limpar</button>
                         </div>
                 </div>
@@ -221,7 +223,8 @@
                 logotipo: ''
             },
 
-            form_local: {
+            novo_local: {
+                indice: '',
                 codigo: '',
                 nome: '',
                 statuslocal: ''
@@ -332,9 +335,7 @@
 
                     }
 
-                },
-
-
+                }, // fim do bloco remPatente
 
 
 
@@ -350,8 +351,78 @@
                 }, // fim do bloco de limpar
 
 
+                addLocal: function () {
+                    var local = jQuery.extend({}, this.novo_local);
 
-            },
+                    if (local.nome.length > 0) {
+
+                        if (isNaN(parseInt(local.indice))) {
+
+                            this.$http.post('http://localhost:4000/insertlocais', local).then(response => {
+                                this.locais.push(response.data);
+                                alert('Inseriu o local ' + response.data.codigo);
+                            })
+                                .catch(error => {
+                                    alert('Erro ao inserir local: ' + error.response.data);
+                                });
+
+                        } else {
+
+                            this.$http.post('http://localhost:4000/updatelocal', local
+                            )
+                                .then(response => {
+
+                                    Vue.set(this.locais, local.indice, response.data);
+
+                                    alert('Alterou o local ' + response.data.codigo);
+                                })
+                                .catch(error => {
+                                    alert('Erro ao alterar local: ' + error);
+                                });
+
+                            alert('local alterado !');
+                        }
+                        
+                        this.cleanFormularioLocal();
+                    }
+                }, // fim bloco addLocal
+
+
+                remLocal: function(param_index) {
+                    var r = confirm("Deseja realmente remover o local?");
+                    if (r) {
+
+                        this.$http.get('http://localhost:4000/deletelocal/' + this.locais[param_index].codigo).then(response => {
+
+                                this.locais.splice(param_index, 1);
+
+                                alert('Removeu com sucesso o Local ' + response.data.codigo);
+
+                            })
+                            .catch(error => {
+                                // error callback                                        
+                                alert('Erro ao remover: ' + error);
+                                console.log(error);
+                            });
+                    }
+                }, // fim bloco remLocal
+
+                editLocal: function(param_index) {
+                    this.novo_local.indice = param_index;
+                    this.novo_local.codigo = this.locais[param_index].codigo;
+                    this.novo_local.nome = this.locais[param_index].nome;
+                    this.novo_local.statuslocal = this.locais[param_index].statuslocal;
+                },// fim bloco editLocal
+
+                cleanFormularioLocal: function (){
+                    this.novo_local.indice = '';
+                    this.novo_local.codigo = '';
+                    this.novo_local.nome = '';
+                    this.novo_local.statuslocal = false;
+                }
+
+            }, // fim methods
+
 
             created: function () {
 
@@ -397,12 +468,6 @@
                 });
 
             }
-
-
-
-
-
-
 
 
 

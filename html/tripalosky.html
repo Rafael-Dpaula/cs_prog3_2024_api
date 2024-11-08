@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Vue - CRUD - Serviços Web - Banco de dados</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.8/vue.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.15.2/axios.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h3>Projeto Vue+Axios+Express+Node</h3>
+
+        <div class="col-xs-2">
+            <ul class="nav nav-pills nav-stacked">
+                <li class="active"><a data-toggle="pill" href="#home">Autenticação</a></li>
+                <li><a data-toggle="pill" href="#menu1">Patentes</a></li>
+                <li><a data-toggle="pill" href="#menu3">Locais</a></li>
+                <li><a data-toggle="pill" href="#menu4">Mapas</a></li>
+                <li><a data-toggle="pill" href="#menu2">Sair</a></li>
+            </ul>
+        </div>
+        <div class="col-xs-6">
+            <div class="tab-content" id="app">
+                <!--   divs que será apresentadas a partir do acionamento via menu  -->
+                <div id="home" class="tab-pane fade in active">
+                    <h3>Autenticacação</h3>
+                </div>
+
+                <div id="menu1" class="tab-pane">
+                    <h3>Patentes</h3>
+
+                    <!-- listar todos os registros da tabela tb_patentes-->
+                    <table class="table table-striped">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Quantidade M. Pontos</th>
+                            <th scope="col">Data</th>
+                            <th scope="col">Cor</th>
+                            <th scope="col">Logotipo</th>
+                            <th scope="col">Alterar</th>
+                            <th scope="col">Remover</th>
+                        </tr>
+                        <tbody>
+                            <tr v-for="(p, indice) in patentes">
+                                <td>{{p.codigo}}</td>
+                                <td>{{p.nome}}</td>
+                                <td>{{p.quant_min_pontos}}</td>
+                                <td>{{p.datacriacao}}</td>
+                                <td>{{p.cor}}</td>
+                                <td>{{p.logotipo}}</td>
+                                <td><button v-on:click="editPatente(indice, p.codigo)" class="btn"
+                                        type="button">Alterar</button></td>
+                                <td><button v-on:click="remPatente(indice, p.codigo)" class="btn"
+                                        type="button">Remover</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!--https://github.com/decesarojunior/js_node_express_vue_cs  -->
+                    <div id="formulario">
+                        <h3>Formulário para cadastrar e alterar Patente</h3>
+                        <div class="form-group">
+                            <label for="namePatenteCodigo">Codigo:</label>
+                            <input type="number" v-model="form_patente.codigo" class="form-control"
+                                name="namePatenteCodigo" id="idPatenteCodigo" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="namePatenteNome">Nome:</label>
+                            <input type="text" v-model="form_patente.nome" class="form-control" name="namePatenteNome"
+                                id="idPatenteNome">
+                        </div>
+                        <div class="form-group">
+                            <label for="namePatenteMinPontos">Quantidade Min. Pontos:</label>
+                            <input type="number" v-model="form_patente.quant_min_pontos" class="form-control"
+                                name="namePatenteMinPontos" id="idPatenteMinPontos">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="namePatenteDataCriacao">Data de Criação:</label>
+                            <input type="text" v-model="form_patente.datacriacao" class="form-control"
+                                name="namePatenteDataCriacao" id="idPatenteDataCriacao" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="namePatenteCor">Cor:</label>
+                            <input type="text" v-model="form_patente.cor" class="form-control" name="namePatenteCor"
+                                id="idPatenteCor">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="namePatenteLogoTipo">Logo:</label>
+                            <input type="text" v-model="form_patente.logotipo" class="form-control"
+                                name="namePatenteLogoTipo" id="idPatenteLogoTipo">
+                        </div>
+
+                        <button @click="addPatente" class="btn btn-primary" type="button">Salvar</button>
+                        <button @click="cleanFormularioPatente" class="btn btn-primary" type="button">Limpar</button>
+                    </div>
+
+                </div>
+
+                <div id="menu2" class="tab-pane">
+                    <h3>Sair</h3>
+                </div>
+
+                <div id="menu3" class="tab-pane">
+                    <h3>Locais</h3>
+                    <h3>atividade assíncrona: implementar a listagem de locais</h3>
+                </div>
+                <div id="menu4" class="tab-pane">
+                    <h3>Mapas</h3>
+
+                    <table class="table table-striped">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Modo</th>
+                            <th scope="col">Data de Criacao</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Alterar</th>
+                            <th scope="col">Remover</th>
+                        </tr>
+                        <tbody>
+                            <tr v-for="(m, indice) in mapas">
+                                <td>{{m.codigo}}</td>
+                                <td>{{m.nome}}</td>
+                                <td>{{m.modo.nome}}</td>
+                                <td>{{m.datacadastromapa}}</td>
+                                <td>{{m.status}}</td>
+                                <td><button v-on:click="editMapa(indice, m.codigo)" class="btn"
+                                        type="button">Alterar</button></td>
+                                <td><button v-on:click="remMapa(indice, m.codigo)" class="btn"
+                                        type="button">Remover</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div id="formulario">
+                        <h3>Formulário para cadastrar e alterar Mapas</h3>
+                        <div class="form-group">
+                            <label for="nameMapaCodigo">Codigo:</label>
+                            <input type="number" v-model="form_mapa.codigo" class="form-control" name="nameMapaCodigo"
+                                id="idMapaCodigo" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="nameMapaNome">Nome:</label>
+                            <input type="text" v-model="form_mapa.nome" class="form-control" name="nameMapaNome"
+                                id="idMapaNome">
+                        </div>
+                        <div class="form-group">
+                            <label for="namePatenteMinPontos">Status:</label>
+                            <input type="checkbox" v-model="form_mapa.status" name="nameMapaStatus" id="idMapaStatus">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameMapaDataCriacao">Data de Criação:</label>
+                            <input type="text" v-model="form_mapa.datacadastroMapa" class="form-control"
+                                name="nameMapaDataCriacao" id="idMapaDataCriacao" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameMapaModo">Modo:</label>
+                            <select v-model="form_mapa.modo" class="form-control" id="selectMapaModo">
+                                <option value="Selecione" selected disabled>Escolha um item</option>
+                                <option v-for="md in modos" v-bind:value="{codigo: md.codigo}">
+                                    {{ md.nome}}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameMapaLocais">Locais:</label>
+                            <select v-model="form_mapa.locais" class="form-control" id="selectMapaLocais" multiple
+                                size="5">
+                                <option v-for="lc in locais" v-bind:value="{codigo: lc.codigo}">
+                                    {{ lc.nome}}
+                                </option>
+                            </select>
+
+                        </div>
+
+                        <button @click="addMapa" class="btn btn-primary" type="button">Salvar</button>
+                        <button @click="cleanFormularioMapa" class="btn btn-primary" type="button">Limpar</button>
+                    </div>
+
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        var patentes = [];
+
+        var mapas = [];
+
+        var modos = [];
+
+        var locais = [];
+
+        var dados = {
+            "locais": locais,
+            "modos": modos,
+            "mapas": mapas,
+            "patentes": patentes,
+            "form_patente": {
+                indice: '',
+                codigo: '',
+                nome: '',
+                quant_min_pontos: '',
+                datacriacao: '',
+                cor: '',
+                logotipo: ''
+            },
+            "form_mapa": {
+                indice: '',
+                codigo: '',
+                nome: '',
+                modo: {},
+                datacadastromapa: '',
+                status: '',
+                locais: []
+            }
+        }
+
+        Vue.prototype.$http = axios;
+
+        new Vue({
+            el: '#app',
+            data: dados,
+            methods: {
+                addMapa: function () {
+
+                },
+
+                addPatente: function () {
+
+                    var patente = jQuery.extend({}, this.form_patente);//clona o this.form_patente
+                    if (patente.nome.length > 0 && patente.quant_min_pontos > 0) {
+                        //verificar se é para inncluir novo ou alterar registro.
+                        if (isNaN(parseInt(patente.indice))) {
+                            //se retornar um NaN significa que o patente.indice é nullo - incluir
+                            this.$http.post('http://localhost:4000/insertpatente', patente)
+                                .then(response => {
+
+                                    this.patentes.push(response.data);
+                                    alert('Inseriu a Patente ' + response.data.codigo);
+                                    this.cleanFormularioPatente();
+                                })
+                                .catch(error => {
+                                    alert('Erro ao inserir Patente: ' + error.response.data);
+                                });
+
+                        } else {
+                            //se não for Nan significa que é necessário alterar o registro
+                            this.$http.post('http://localhost:4000/updatepatente', patente)
+                                .then(response => {
+                                    //altera o elemento.
+                                    Vue.set(this.patentes, patente.indice, response.data);
+                                    alert('Alterou a Patente ' + response.data.codigo);
+                                    this.cleanFormularioPatente();
+                                })
+                                .catch(error => {
+                                    alert('Erro ao alterar Patente: ' + error.response.data);
+                                });
+                        }
+                    } else {
+                        alert("Formulário de Patente incompleto !!");
+                    }
+                },
+                cleanFormularioMapa: function () {
+
+                    this.form_mapa.indice = '';
+                    this.form_mapa.nome = '';
+                    this.form_mapa.status = false;
+                    this.form_mapa.datacadastromapa = '';
+                    this.form_mapa.modo = 'Selecione';
+
+                },
+                cleanFormularioPatente: function () {
+                    this.form_patente.indice = '';
+                    this.form_patente.codigo = '';
+                    this.form_patente.nome = '';
+                    this.form_patente.quant_min_pontos = '';
+                    this.form_patente.cor = '';
+                    this.form_patente.datacriacao = '';
+                    this.form_patente.logotipo = '';
+                },
+                editPatente: function (param_index, param_codigo) {
+                    this.form_patente.indice = param_index;
+                    this.form_patente.codigo = this.patentes[param_index].codigo;
+                    this.form_patente.nome = this.patentes[param_index].nome;
+                    this.form_patente.quant_min_pontos = this.patentes[param_index].quant_min_pontos;
+                    this.form_patente.cor = this.patentes[param_index].cor;
+                    this.form_patente.datacriacao = this.patentes[param_index].datacriacao;
+                    this.form_patente.logotipo = this.patentes[param_index].logotipo;
+                },
+                remPatente: function (param_index, param_codigo) {
+                    var r = confirm("Deseja realmente remover a patente " + param_codigo + " ?");
+                    if (r) {
+                        this.$http.get('http://localhost:4000/deletepatente/' + param_codigo)
+                            .then(response => {
+                                //documentacao sobre o splice
+                                //https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/splice
+                                //remove 1 elemento do índice definido pela variavel param_index
+                                this.patentes.splice(param_index, 1);
+
+                                alert('Removeu com sucesso a Patente ' + response.data.codigo);
+
+                            })
+                            .catch(error => {
+                                // error callback                                        
+                                alert('Erro ao remover Patente: ' + error);
+                                console.log(error);
+                            });
+                    }
+                }
+
+            },
+            created: function () {
+
+                this.cleanFormularioMapa();
+
+                this.$http.get('http://localhost:4000/listpatentes')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.patentes.push(p);
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listpatentes :' + response);
+                        console.log(response);
+                    });
+
+
+                this.$http.get('http://localhost:4000/listmapas')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.mapas.push(p);
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listmapas :' + response);
+                        console.log(response);
+                    });
+
+
+                this.$http.get('http://localhost:4000/listmodos')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.modos.push(p);
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listmodos :' + response);
+                        console.log(response);
+                    });
+
+                this.$http.get('http://localhost:4000/listlocais')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.locais.push(p);
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listlocais :' + response);
+                        console.log(response);
+                    });
+
+
+            }
+        });
+
+    });
+</script>
+
+</html>
