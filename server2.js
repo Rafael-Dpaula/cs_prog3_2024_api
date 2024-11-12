@@ -246,7 +246,7 @@ sw.post('/insertmapa', function (req, res, next) {
             var q1 = {
                 text: 'insert into tb_mapa (nome, datacadastromapa, status, codmodo) '
                     + ' values ($1, now(), $2, $3) returning codigo, nome, to_char(datacadastromapa, \'dd/mm/yyyy hh24:mi:ss\') as datacadastromapa, status, 0 as locais',
-                values: [req.body.nome, (req.body.status  == true ? "A" : "I"), req.body.modo.codigo]
+                values: [req.body.nome, req.body.status, req.body.modo.codigo]
             }
             client.query(q1, async function (err, result1) {
                 if (err) {
@@ -286,7 +286,8 @@ sw.post('/insertmapa', function (req, res, next) {
     });
 });
 
-sw.get('/deletemapa/:nome', (req, res) => {
+
+sw.get('/deletemapa/:codigo', (req, res) => {
 
     postgres.connect(function (err, client, done) {
         if (err) {
@@ -295,35 +296,40 @@ sw.get('/deletemapa/:nome', (req, res) => {
         } else {
 
             var q0 = {
-                text: 'delete from tb_mapa where codigo = (select min(codigo) from tb_mapa where upper(nome) = upper($1))',
+                text: 'delete FROM tb_mapa_locais where codmapa = $1',
                 values: [req.params.codigo]
             }
 
             var q1 = {
-                text: 'delete FROM tb_mapa where nome = $1',
-                values: [req.params.nome]
+                text: 'delete FROM tb_mapa where codigo = $1',
+                values: [req.params.codigo]
             }
 
             client.query(q0, function (err, result) {
+
                 if (err) {
                     console.log(err);
                     res.status(400).send('{' + err + '}');
-
                 } else {
+
                     client.query(q1, function (err, result) {
 
                         if (err) {
                             console.log(err);
                             res.status(400).send('{' + err + '}');
-
                         } else {
-                            done() //closing connection
-                            res.status(200).send({ 'nome': req.params.nome });//retorna o nickname deletado.
+
+                            res.status(200).send({ 'codigo': req.params.codigo });//retorna o nickname deletado.
+
                         }
-                    })
+                    });
+
                 }
+
             });
+
         }
+        done();
     });
 });
 
@@ -331,50 +337,67 @@ sw.get('/deletemapa/:nome', (req, res) => {
 sw.post('/updatemapa', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
-
         if (err) {
-
             console.log("Nao conseguiu acessar o  BD " + err);
             res.status(400).send('{' + err + '}');
         } else {
-
-            var q = {
-                text: 'update tb_mapa set codmodo = $1, datacadastromapa = now(), status = $2 where lower(nome) = lower($3) returning nome, codmodo, status, to_char(datacadastromapa, \'dd/mm/yyyy hh24:mm:ss\') as datacadastromapa',
-                values: [
-                    req.body.codmodo,
-                    req.body.status == true ? "A" : "I",
-                    req.body.nome]
+            console.log(req.body.status)
+            var q1 = {
+                text: 'update tb_mapa set nome = $1, status = $2, codmodo = $3 where codigo = $4 returning codigo, nome, codmodo as modo, (select nome from tb_modo where codigo = tb_mapa.codmodo) as modo_nome, to_char(datacadastromapa, \'dd/mm/yyyy hh24:mi:ss\') as datacadastromapa, status, 0 as locais ',
+                values: [req.body.nome, (req.body.status == true ? "A" : "I"), req.body.modo.codigo, req.body.codigo]
             }
-
-            client.query(q, async function (err, result) {
+            client.query(q1, async function (err, result1) {
                 if (err) {
-                    console.log('retornou 400 no update');
-                    console.log(err)
+                    console.log('retornou 400 no update q1 para updatemapa');
                     res.status(400).send('{' + err + '}');
                 } else {
 
-                    try {
-                        await client.query('delete from tb_mapa_locais ml where ml.codmapa = $1', [req.body.codigo])
-
-                    } catch (err) {
-                        res.status(400).send('{' + err + '}');
-
+                    var q2 = {
+                        text: 'delete from tb_mapa_locais where codmapa = $1;',
+                        values: [req.body.codigo]
                     }
+                    client.query(q2, async function (err, result2) {
+                        if (err) {
+                            console.log('retornou 400 no update q2 para updatemapa');
+                            res.status(400).send('{' + err + '}');
+                        } else {
 
-                    done(); // closing the connection;
-                    console.log('retornou 201 no updatemapas');
-                    res.status(201).send({
-                        "codmodo": result.rows[0].codmodo,
-                        "nome": result.rows[0].nome,
-                        "status": result.rows[0].status,
-                        "datacadastromapa": result.rows[0].datacadastromapa
+                            locais = []
+                            for (var i = 0; i < req.body.locais.length; i++) {
+                                try { //Exercicio 2: incluir todas as colunas de tb_patente. , (select nome from tb_local where codigo = tb_mapa_locais.codlocal) as nome, (select statuslocal from tb_local where codigo = tb_mapa_locais.codlocal) as statuslocal                         
+                                    pj = await client.query('insert into tb_mapa_locais (codmapa, codlocal) values ($1, $2) returning codlocal as codigo',
+                                        [result1.rows[0].codigo, req.body.locais[i].codigo]
+                                    )
+
+                                    locais.push(pj.rows[0])
+
+                                } catch (error) {
+                                    console.log('retornou 400 no insert for em tb_mapa_locais');
+                                    console.log(error)
+                                    res.status(400).send('{' + error + '}');
+                                }
+                            }
+
+                            console.log('retornou 201 no updatemapa');
+
+                            res.status(201).send({
+                                "codigo": result1.rows[0].codigo,
+                                "nome": result1.rows[0].nome,
+                                "datacadastromapa": result1.rows[0].datacadastromapa,
+                                "status": result1.rows[0].status,
+                                "locais": locais,
+                                "modo": { "codigo": result1.rows[0].modo, "nome": result1.rows[0].modo_nome }
+                            });
+
+                        }
                     });
+
                 }
             });
+
         }
     });
 });
-
 sw.get('/listpatentes', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
