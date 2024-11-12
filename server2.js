@@ -194,35 +194,41 @@ sw.post('/updatelocal', function (req, res, next) {
 sw.get('/listmapas', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
-
         if (err) {
-
             console.log("Nao conseguiu acessar o  BD " + err);
             res.status(400).send('{' + err + '}');
         } else {
-
-            var q = 'select m.codigo, m.nome as mapa, md.nome as modo, 0 as locais, to_char(datacadastromapa, \'dd/mm/yyyy hh24:mm:ss\')as datacadastromapa, status from tb_mapa m, tb_modo md where m.codmodo = md.codigo order by codigo asc';
+            var q = 'select m.codigo, m.nome, to_char(m.datacadastromapa, \'dd/mm/yyyy\') as datacadastromapa, m.status, m.codmodo as modo, 0 as locais from tb_mapa m order by m.codigo asc';
 
             client.query(q, async function (err, result) {
 
                 if (err) {
-                    console.log('retornou 400 no listmapas');
+                    console.log('retornou 400 no listjogadores');
                     console.log(err);
-
                     res.status(400).send('{' + err + '}');
                 } else {
                     for (var i = 0; i < result.rows.length; i++) {
-                        try {
-                            lm = await client.query('select l.codigo, l.nome, l.statuslocal from tb_local l, tb_mapa_locais ml where ml.codlocal = l.codigo and ml.codmapa = $1', [result.rows[i].codigo])
-                            result.rows[i].locais = lm.rows;
+                        try { //Exercicio 2: incluir todas as colunas de tb_patente.                         
+                            lc = await client.query('select codlocal as codigo from ' +
+                                'tb_mapa_locais ' +
+                                'where codmapa = $1',
+                                [result.rows[i].codigo])
+                            result.rows[i].locais = lc.rows;
+
+                            pe = await client.query('select md.codigo, md.nome from tb_mapa m, ' +
+                                'tb_modo md ' +
+                                'where  m.codmodo=md.codigo and md.codigo = $1',
+                                [result.rows[i].modo])
+
+                            result.rows[i].modo = pe.rows[0];
+
                         } catch (err) {
                             res.status(400).send('{' + err + '}');
                         }
-
                     }
-                    res.status(201).send(result.rows);
                     done(); // closing the connection;
-
+                    //console.log('retornou 201 no /listendereco');                    
+                    res.status(201).send(result.rows);
                 }
             });
         }
@@ -232,40 +238,53 @@ sw.get('/listmapas', function (req, res, next) {
 sw.post('/insertmapa', function (req, res, next) {
 
     postgres.connect(function (err, client, done) {
-
         if (err) {
-
             console.log("Nao conseguiu acessar o  BD " + err);
             res.status(400).send('{' + err + '}');
         } else {
-
-            var q = {
-                text: 'insert into tb_mapa(codmodo, nome, datacadastromapa, status) values ($1,$2,now(), $3) returning codmodo, nome, to_char(datacadastromapa, \'dd/mm/yyyy\') as datacadastromapa',
-                values: [req.body.codmodo,
-                req.body.nome,
-                req.body.status == true ? "A" : "I"]
+            console.log(req.body.status)
+            var q1 = {
+                text: 'insert into tb_mapa (nome, datacadastromapa, status, codmodo) '
+                    + ' values ($1, now(), $2, $3) returning codigo, nome, to_char(datacadastromapa, \'dd/mm/yyyy hh24:mi:ss\') as datacadastromapa, status, 0 as locais',
+                values: [req.body.nome, (req.body.status  == true ? "A" : "I"), req.body.modo.codigo]
             }
-
-            client.query(q, async function (err, result) {
+            client.query(q1, async function (err, result1) {
                 if (err) {
-                    console.log('retornou 400 no insert q');
+                    console.log('retornou 400 no insert q1 para insertmapa');
                     res.status(400).send('{' + err + '}');
                 } else {
-                    done(); // closing the connection;
+                    result1.rows[0].locais = []
+                    for (var i = 0; i < req.body.locais.length; i++) {
+                        try { //Exercicio 2: incluir todas as colunas de tb_patente.                         
+                            pj = await client.query('insert into tb_mapa_locais (codmapa, codlocal) values ($1, $2) returning codmapa, codlocal',
+                                [result1.rows[0].codigo, req.body.locais[i].codigo]
+                            )
+
+                            result1.rows[0].locais.push(pj.rows)
+
+                        } catch (error) {
+                            console.log('retornou 400 no insert for em tb_mapa_locais');
+                            console.log(error)
+                            res.status(400).send('{' + error + '}');
+                        }
+                    }
+
+
                     console.log('retornou 201 no insertmapa');
+
                     res.status(201).send({
-                        "nome": result.rows[0].nome,
-                        "codmodo": result.rows[0].codmodo,
-                        "status": result.rows[0].status,
-                        "datacadastromapa": result.rows[0].datacadastromapa,
-                        "locais": req.body.locais
+                        "codigo": result1.rows[0].codigo,
+                        "nome": result1.rows[0].nome,
+                        "datacadastromapa": result1.rows[0].datacadastromapa,
+                        "status": result1.rows[0].status,
+                        "locais": result1.rows[0].locais
                     });
                 }
             });
+
         }
     });
 });
-
 
 sw.get('/deletemapa/:nome', (req, res) => {
 
@@ -277,7 +296,7 @@ sw.get('/deletemapa/:nome', (req, res) => {
 
             var q0 = {
                 text: 'delete from tb_mapa where codigo = (select min(codigo) from tb_mapa where upper(nome) = upper($1))',
-                values: [req.params.nome]
+                values: [req.params.codigo]
             }
 
             var q1 = {
@@ -382,6 +401,68 @@ sw.get('/listpatentes', function (req, res, next) {
                 }
             });
         }
+    });
+});
+sw.post('/updatepatentes', function (req, res, next) {
+
+    postgres.connect(function (err, client, done) {
+        if (err) {
+
+            console.log("Nao conseguiu acessar o  BD " + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q1 = {
+                text: "update tb_patente set nome=$1, quant_min_pontos=$2, cor=$3, logotipo=$4 where tb_patente.codigo=$5 returning codigo, nome, quant_min_pontos, to_char(datacriacao, \'dd/mm/yyyy hh24:mm:ss\') as datacriacao, cor, logotipo",
+
+                values: [req.body.nome,
+                req.body.quant_min_pontos,
+                req.body.cor, req.body.logotipo, req.body.codigo]
+            }
+            console.log(q1)
+
+            client.query(q1, function (err, result1) {
+                if (err) {
+                    console.log('retornou 400 no update q1');
+                    res.status(400).send('{' + err + '}');
+                } else {
+                    console.log('retornou 201 no updatepatente');
+                    res.status(201).send({
+                        "codigo": result1.rows[0].codigo, "nome": result1.rows[0].nome,
+                        "quant_min_pontos": result1.rows[0].quant_min_pontos,
+                        "cor": result1.rows[0].cor,
+                        "datacriacao": result1.rows[0].datacriacao,
+                        "logotipo": result1.rows[0].logotipo
+                    });
+                }
+
+            })
+
+        }
+    })
+});
+
+sw.get('/deletepatentes/:codigo', function (req, res, next) {
+    postgres.connect(function (err, client, done) {
+        if (err) {
+            console.log("Não conseguiu acessar o banco de dados!" + err);
+            res.status(400).send('{' + err + '}');
+        } else {
+
+            var q = {
+                text: 'delete FROM tb_patente where codigo = $1',
+                values: [req.params.codigo]
+            }
+        }
+        client.query(q, function (err, result) {
+            
+            if (err) {
+                console.log(err);
+                res.status(400).send('{' + err + '}');
+            } else {
+                res.status(200).send({ 'codigo': req.params.codigo})
+            }
+        })
     });
 });
 

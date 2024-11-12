@@ -21,9 +21,10 @@
             <ul class="nav nav-pills nav-stacked">
                 <li class="active"><a data-toggle="pill" href="#home">Autenticação</a></li>
                 <li><a data-toggle="pill" href="#menu1">Patentes</a></li>
-                <li><a data-toggle="pill" href="#menu2">jogadores</a></li>
-                <li><a data-toggle="pill" href="#menu3">Locais</a></li>
-                <li><a data-toggle="pill" href="#menu4">Sair</a></li>
+                <li><a data-toggle="pill" href="#menu3">jogadores</a></li>
+                <li><a data-toggle="pill" href="#menu4">Locais</a></li>
+                <li><a data-toggle="pill" href="#menu5">Mapas</a></li>
+                <li><a data-toggle="pill" href="#menu2">Sair</a></li>
             </ul>
         </div>
 
@@ -112,7 +113,7 @@
 
                 </div>
 
-                <div id="menu2" class="tab-pane fade">
+                <div id="menu3" class="tab-pane fade">
 
                     <h2>jogadores</h2>
 
@@ -141,11 +142,70 @@
                             </tr>
                         </tbody>
                     </table>
+                    <form id="formulario">
+                        <h3>Formulário para cadastrar Jogador</h3>
+                        <div class="form-group">
+                            <label for="inputNickname">Nickname:</label>
+                            <input type="text" v-model="novo_jogador.nickname" class="form-control" id="inputNickname">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputSenha">Senha:</label>
+                            <input type="password" v-model="novo_jogador.senha" class="form-control" id="inputSenha">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputDtCad">D. Cadastro:</label>
+                            <input type="text" v-model="novo_jogador.datacadastro" class="form-control" id="inputDtCad"
+                                disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputDtLast">D. Último Acesso:</label>
+                            <input type="text" v-model="novo_jogador.data_ultimo_login" class="form-control"
+                                id="inputDtLast" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputQtdPontos">Quantidade de Pontos:</label>
+                            <input type="number" v-model="novo_jogador.quantpontos" class="form-control"
+                                id="inputQtdPontos">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputQtdDin">Quantidade de dinheiro:</label>
+                            <input type="number" v-model="novo_jogador.quantdinheiro" class="form-control"
+                                id="inputQtdDin">
+                        </div>
+                        <div class="form-group">
+                            <label for="checkSituacao">Situação:</label>
+                            <input type="checkbox" v-model="novo_jogador.situacao" id="checkSituacao">
+                        </div>
 
+                        <div class="form-group">
+                            <label for="inputCep">Cep:</label>
+                            <input type="text" v-model="novo_jogador.endereco.cep" class="form-control" id="inputCep">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputCom">Complemento:</label>
+                            <input type="text" v-model="novo_jogador.endereco.complemento" class="form-control"
+                                id="inputCom">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="selectPatente">Patentes:</label>
+                            <select v-model="novo_jogador.patentes" class="form-control" id="selectPatente" multiple>
+                                <option v-for="p in patentes" v-bind:value="p">
+                                    {{ p.nome }}
+                                </option>
+                            </select>
+
+                        </div>
+
+                        <button @click="addJogador" class="btn btn-primary" type="button">Salvar</button>
+                        <button @click="cleanFormularioJogador" class="btn btn-primary" type="button">Limpar</button>
+
+                    </form>
 
                 </div>
 
-                <div id="menu3" class="tab-pane">
+                <div id="menu4" class="tab-pane">
                     <h3>Locais</h3>
 
                     <table class="table table-striped">
@@ -186,11 +246,89 @@
                 </div>
                 </form>
 
+                <div id="menu5" class="tab-pane">
+                    <h3>Mapas</h3>
+
+                    <table class="table table-striped">
+                        <tr>
+                            <th scope="col">Código</th>
+                            <th scope="col">Nome</th>
+                            <th scope="col">Modo</th>
+                            <th scope="col">Data de Criacao</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Alterar</th>
+                            <th scope="col">Remover</th>
+                        </tr>
+                        <tbody>
+                            <tr v-for="(m, indice) in mapas">
+                                <td>{{m.codigo}}</td>
+                                <td>{{m.nome}}</td>
+                                <td>{{m.modo.nome}}</td>
+                                <td>{{m.datacadastromapa}}</td>
+                                <td>{{m.status}}</td>
+                                <td><button v-on:click="editMapa(indice, m.codigo)" class="btn"
+                                        type="button">Alterar</button></td>
+                                <td><button v-on:click="remMapa(indice, m.codigo)" class="btn"
+                                        type="button">Remover</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div id="formulario">
+                        <h3>Formulário para cadastrar e alterar Mapas</h3>
+                        <div class="form-group">
+                            <label for="nameMapaCodigo">Codigo:</label>
+                            <input type="number" v-model="form_mapa.codigo" class="form-control" name="nameMapaCodigo"
+                                id="idMapaCodigo" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="nameMapaNome">Nome:</label>
+                            <input type="text" v-model="form_mapa.nome" class="form-control" name="nameMapaNome"
+                                id="idMapaNome">
+                        </div>
+                        <div class="form-group">
+                            <label for="namePatenteMinPontos">Status:</label>
+                            <input type="checkbox" v-model="form_mapa.status" name="nameMapaStatus" id="idMapaStatus">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameMapaDataCriacao">Data de Criação:</label>
+                            <input type="text" v-model="form_mapa.datacadastromapa" class="form-control"
+                                name="nameMapaDataCriacao" id="idMapaDataCriacao" disabled>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nameMapaModo">Modo:</label>
+                            <select v-model="form_mapa.modo" class="form-control" id="selectMapaModo">
+                                <option value="Selecione">Selecione</option>
+                                <option v-for="md in modos" v-bind:value="{'codigo': md.codigo}">
+                                    {{ md.nome}}
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nameMapaLocais">Locais:</label>
+                            <select v-model="form_mapa.locais" class="form-control" id="selectMapaLocais" multiple
+                                size="5">
+                                <option v-for="lc in locais" v-bind:value="{'codigo': lc.codigo}">
+                                    {{ lc.nome}}
+                                </option>
+                            </select>
+                        </div>
+
+                        <button @click="addMapa" class="btn btn-primary" type="button">Salvar</button>
+                        <button @click="cleanFormularioMapa" class="btn btn-primary" type="button">Limpar</button>
+                    </div>
+                </div>
+
+
+
+                <div id="menu2" class="tab-pane">
+                    <h3>Sair</h3>
+                </div>
             </div>
 
-            <div id="menu4" class="tab-pane">
-                <h3>Sair</h3>
-            </div>
+
         </div>
     </div>
 
@@ -203,7 +341,13 @@
 
         var jogadores = [];
 
+        var enderecos = [];
+
         var locais = [];
+
+        var mapas = [];
+
+        var modos = [];
 
 
         var dados = {
@@ -211,9 +355,15 @@
 
             "jogadores": jogadores,
 
+            "enderecos": enderecos,
+
             "locais": locais,
 
-            form_patente: {
+            "mapas": mapas,
+
+            "modos": modos,
+
+            "form_patente": {
                 indice: '',
                 codigo: '',
                 nome: '',
@@ -223,14 +373,39 @@
                 logotipo: ''
             },
 
-            novo_local: {
+            "novo_local": {
                 indice: '',
                 codigo: '',
                 nome: '',
                 statuslocal: ''
             },
-        }
 
+            "form_mapa": {
+                indice: '',
+                codigo: '',
+                nome: '',
+                datacadastromapa: '',
+                status: false,
+                modo: { nome: '', codigo: '' },
+                locais: [],
+            },
+
+            "novo_jogador": {
+                indice: '',
+                nickname: '',
+                senha: '',
+                quantpontos: 0,
+                quantdinheiro: 0,
+                datacadastro: '',
+                data_ultimo_login: '',
+                situacao: '',
+                endereco: { codigo: 0, cep: '', complemento: '' },
+                patentes: []
+            },
+
+
+
+        }
 
 
         Vue.filter('formataData', function (value) { /// formatação de data
@@ -382,23 +557,23 @@
 
                             alert('local alterado !');
                         }
-                        
+
                         this.cleanFormularioLocal();
                     }
                 }, // fim bloco addLocal
 
 
-                remLocal: function(param_index) {
+                remLocal: function (param_index) {
                     var r = confirm("Deseja realmente remover o local?");
                     if (r) {
 
                         this.$http.get('http://localhost:4000/deletelocal/' + this.locais[param_index].codigo).then(response => {
 
-                                this.locais.splice(param_index, 1);
+                            this.locais.splice(param_index, 1);
 
-                                alert('Removeu com sucesso o Local ' + response.data.codigo);
+                            alert('Removeu com sucesso o Local ' + response.data.codigo);
 
-                            })
+                        })
                             .catch(error => {
                                 // error callback                                        
                                 alert('Erro ao remover: ' + error);
@@ -407,21 +582,212 @@
                     }
                 }, // fim bloco remLocal
 
-                editLocal: function(param_index) {
+                editLocal: function (param_index) {
                     this.novo_local.indice = param_index;
                     this.novo_local.codigo = this.locais[param_index].codigo;
                     this.novo_local.nome = this.locais[param_index].nome;
                     this.novo_local.statuslocal = this.locais[param_index].statuslocal;
                 },// fim bloco editLocal
 
-                cleanFormularioLocal: function (){
+                cleanFormularioLocal: function () {
                     this.novo_local.indice = '';
                     this.novo_local.codigo = '';
                     this.novo_local.nome = '';
                     this.novo_local.statuslocal = false;
-                }
+                },
+
+                addMapa: function () {
+                    var mapa = jQuery.extend({}, this.form_mapa);
+
+                    if (mapa.nome.length > 0) {
+
+                        if (isNaN(parseInt(mapa.indice))) {
+
+                            this.$http.post('http://localhost:4000/insertmapa', mapa).then(response => {
+                                this.mapas.push(response.data);
+                                alert('Inseriu o mapa ' + response.data.codigo);
+                            })
+                                .catch(error => {
+                                    alert('Erro ao inserir mapa: ' + error.response.data);
+                                });
+
+                        } else {
+
+                            this.$http.post('http://localhost:4000/updatemapa', mapa
+                            )
+                                .then(response => {
+
+                                    Vue.set(this.mapas, mapa.indice, response.data);
+
+                                    alert('Alterou o mapa ' + response.data.codigo);
+                                })
+                                .catch(error => {
+                                    alert('Erro ao alterar mapa: ' + error);
+                                });
+
+                            alert('mapa alterado !');
+                        }
+
+                        this.cleanFormularioMapa();
+                    }
+                },  //fim do bloco addMapa
+
+                editMapa: function (param_index, param_codigo) {
+
+                    this.form_mapa.indice = param_index;
+                    this.form_mapa.codigo = this.mapas[param_index].codigo;
+                    this.form_mapa.nome = this.mapas[param_index].nome;
+                    this.form_mapa.datacadastromapa = this.mapas[param_index].datacadastromapa;
+                    this.form_mapa.status = this.mapas[param_index].status == 'A' ? true : false;
+                    this.form_mapa.modo = this.mapas[param_index].modo;
+                    this.form_mapa.locais = this.mapas[param_index].locais;
+                },
+
+                remMapa: function (param_index) {
+                    var r = confirm("Deseja realmente remover o mapa?");
+                    if (r) {
+
+                        this.$http.get('http://localhost:4000/deletemapa/' + this.mapas[param_index].codigo).then(response => {
+
+                            this.mapas.splice(param_index, 1);
+
+                            alert('Removeu com sucesso o mapa ' + response.data.codigo);
+
+                        })
+                            .catch(error => {
+                                // error callback                                        
+                                alert('Erro ao remover: ' + error);
+                                console.log(error);
+                            });
+                    }
+                },
+
+                cleanFormularioMapa: function () {
+
+                    this.form_mapa.indice = '';
+                    this.form_mapa.codigo = '';
+                    this.form_mapa.nome = '';
+                    this.form_mapa.status = false;
+                    this.form_mapa.datacadastromapa = '';
+                    this.form_mapa.modo = 'Selecione';
+                    this.form_mapa.locais = [];
+
+                },// fim do cleanformmapa
+
+                addJogador: function () {
+
+                    var jogador = jQuery.extend({}, this.novo_jogador);//clona o this.novo_jogador e armazena na variavel jogador. dessa forma alteracoes em this.novo_jogador nao irao refletir em jogador.
+                    var endereco = jQuery.extend({}, this.novo_jogador.endereco);//clona o this.novo_jogador.endereco                        
+                    jogador.endereco = endereco;
+
+                    if (jogador.nickname.trim().length > 0 && jogador.senha.trim().length > 0 &&
+                        jogador.quantpontos > -1 && jogador.quantdinheiro > -1 &&
+                        jogador.endereco.cep.length > 0) {
+
+                        //documentação sobre o parseInt
+                        //https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/parseInt
+                        if (isNaN(parseInt(jogador.indice))) {
+
+                            this.$http.post('http://localhost:4000/insertjogador', jogador
+                            )
+                                .then(response => {
+
+                                    this.jogadores.push(response.data);
+                                    alert('Inseriu o jogador ' + response.data.nickname);
+                                })
+                                .catch(error => {
+                                    console.log(error)
+                                    alert('Erro ao inserir jogador: ' + error.response.data);
+                                });
+
+                        } else {
+
+                            this.$http.post('http://localhost:4000/updatejogador', jogador
+                            )
+                                .then(response => {
+
+                                    //this.jogadores[jogador.indice]  = response.data;	                                        
+                                    Vue.set(this.jogadores, jogador.indice, response.data);//altera um elemento do vetor this.jogadores
+
+                                    alert('Alterou o jogador ' + response.data.nickname);
+                                })
+                                .catch(error => {
+                                    console.log(error)
+                                    alert('Erro ao alterar jogador: ' + error);
+                                });
+
+                        }
+
+                        this.cleanFormularioJogador();
+
+                    } else {
+
+                        alert("Preencha o formulário !!!");
+                    }
+                },// fim addjogador
+
+                editJogador: function (param_index) {
+
+                    this.novo_jogador.indice = param_index;
+                    this.novo_jogador.nickname = this.jogadores[param_index].nickname;
+                    this.novo_jogador.senha = this.jogadores[param_index].senha;
+                    this.novo_jogador.datacadastro = this.jogadores[param_index].datacadastro;
+                    this.novo_jogador.data_ultimo_login = this.jogadores[param_index].data_ultimo_login;
+                    this.novo_jogador.quantpontos = this.jogadores[param_index].quantpontos;
+                    this.novo_jogador.quantdinheiro = this.jogadores[param_index].quantdinheiro;
+                    this.novo_jogador.situacao = this.jogadores[param_index].situacao == "A" ? true : false;
+                    this.novo_jogador.endereco = this.jogadores[param_index].endereco;
+                    this.novo_jogador.patentes = this.jogadores[param_index].patentes;
+
+                },// fim editjogador
+
+                remJogador: function (param_index) {
+
+                    //documentacao sobre o splice
+                    //https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/splice
+                    //remove 1 elemento do índice definido pela variavel param_index
+                    var r = confirm("Deseja realmente remover?");
+                    if (r) {
+
+                        this.$http.get('http://localhost:4000/deletejogador/' + this.jogadores[param_index].nickname)
+
+                            .then(response => {
+
+                                //documentacao sobre o splice
+                                //https://developer.mozilla.org/pt-BR/docs/Web/JavaScript/Reference/Global_Objects/Array/splice
+                                //remove 1 elemento do índice definido pela variavel param_index
+                                this.jogadores.splice(param_index, 1);
+
+                                alert('Removeu com sucesso o jogador ' + response.data.nickname);
+
+                            })
+                            .catch(error => {
+                                // error callback                                        
+                                alert('Erro ao remover: ' + error);
+                                console.log(error);
+                            });
+
+                    }
+
+                },// fim remjogador
+
+                cleanFormularioJogador: function () {
+
+                    this.novo_jogador.indice = '';
+                    this.novo_jogador.nickname = '';
+                    this.novo_jogador.datacadastro = '';
+                    this.novo_jogador.quantdinheiro = 0;
+                    this.novo_jogador.quantpontos = 0;
+                    this.novo_jogador.senha = '';
+                    this.novo_jogador.situacao = false;
+                    this.novo_jogador.endereco = '';
+                    this.novo_jogador.data_ultimo_login = '';
+                },// fim clean formulario jogador
+
 
             }, // fim methods
+
+
 
 
             created: function () {
@@ -467,7 +833,85 @@
                     console.log(response);
                 });
 
-            }
+                this.$http.get('http://localhost:4000/listmapas')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.mapas.push(p);
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listmapas :' + response);
+                        console.log(response);
+                    });
+
+
+                this.$http.get('http://localhost:4000/listmodos')
+                    .then(response => {
+                        //541
+                        for (let p of response.data) {
+
+                            this.modos.push({ "codigo": p.codigo, "nome": p.nome });
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        alert('Não conectou no serviço: listmodos :' + response);
+                        console.log(response);
+                    });
+
+                this.$http.get('http://localhost:4000/listjogador')
+                    .then(response => {
+
+                        for (let j of response.data) {
+
+                            this.jogadores.push({
+                                nickname: j.nickname,
+                                senha: j.senha,
+                                quantpontos: j.quantpontos,
+                                quantdinheiro: j.quantdinheiro,
+                                datacadastro: j.datacadastro,
+                                data_ultimo_login: j.data_ultimo_login,
+                                situacao: j.situacao,
+                                endereco: {
+                                    codigo: j.codigo,
+                                    cep: j.cep,
+                                    complemento: j.complemento
+                                },
+                                patentes: j.patentes
+                            }
+                            );
+
+                        }
+
+                    }).catch(response => {
+                        // error callback
+                        // alert('Não conectou no serviço: listjogador');
+                        console.log(response);
+                    });
+
+                this.$http.get('http://localhost:4000/listendereco')
+                    .then(response => {
+
+                        for (let e of response.data) {
+
+                            this.enderecos.push({
+                                "codigo": e.codigo,
+                                "complemento": e.complemento,
+                                "cep": e.cep,
+                                "jogador": { "nickname": e.nickname }
+                            });
+
+                        }
+                    }).catch(response => {
+                        // error callback
+                        // alert('Não conectou no serviço: listendereco');
+                        console.log(response);
+                    });
+
+            } // fim do created
 
 
 
